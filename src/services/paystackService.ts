@@ -201,3 +201,10 @@ export function getTransactionCharge(amountGHS: number): number {
 
   return Math.round((amountGHS * 100 * config.platformFeePercent) / 100);
 }
+
+export function canConfigurePaymentMethods(): boolean {
+  const config = getPaystackConfig();
+  if (config.isOwnAccountMode) return true;
+  if (config.isSubaccountMode && config.platformFeePercent === 0) return true;
+  return false;
+}

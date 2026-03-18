@@ -1,5 +1,6 @@
 import PaymentAccountDetails from "@/components/admin/payments/PaymentAccountDetails";
 import PaymentConfigReference from "@/components/admin/payments/PaymentConfigReference";
+import PaymentMethodsConfig from "@/components/admin/payments/PaymentMethodsConfig";
 import PaymentModeBanner from "@/components/admin/payments/PaymentModeBanner";
 import PaymentTransactionSummary from "@/components/admin/payments/PaymentTransactionSummary";
 
@@ -19,6 +20,7 @@ const AdminPaymentsPage = () => {
         <PaymentTransactionSummary />
         <PaymentModeBanner />
         <PaymentAccountDetails />
+        <PaymentMethodsConfig />
         {/* <PaymentConfigReference /> */}
       </div>
     </div>
