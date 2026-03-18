@@ -45,6 +45,7 @@ import AdminDiscountCodesPage from "./pages/admin/AdminDiscountCodesPage";
 import AdminShippingRatesPage from "./pages/admin/AdminShippingRatesPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
+import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { storeConfig } from "@/config/store.config";
 
@@ -139,6 +140,7 @@ const AppShell = () => {
             <Route path="customers/:id" element={<AdminCustomerDetailPage />} />
             <Route path="discounts" element={<AdminDiscountCodesPage />} />
             <Route path="shipping" element={<AdminShippingRatesPage />} />
+            <Route path="payments" element={<AdminPaymentsPage />} />
             <Route
               path="users"
               element={

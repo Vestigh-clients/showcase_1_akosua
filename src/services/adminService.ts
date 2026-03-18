@@ -25,6 +25,12 @@ export interface DashboardStats {
   totalCustomersTrend: number | null;
 }
 
+export interface PaymentTransactionSummary {
+  totalPaid: number;
+  paidThisMonth: number;
+  pendingTotal: number;
+}
+
 export type RevenuePeriod = "7d" | "30d" | "90d" | "12m";
 
 export interface RevenuePoint {
@@ -533,6 +539,44 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
     ordersThisMonthTrend: toTrend(ordersThisMonth, ordersPreviousMonth),
     totalCustomers,
     totalCustomersTrend: toTrend(customersThisMonth, customersPreviousMonth),
+  };
+};
+
+export const fetchPaymentTransactionSummary = async (): Promise<PaymentTransactionSummary> => {
+  const monthStart = startOfMonth(new Date());
+
+  const [paidOrdersResult, pendingOrdersResult] = await Promise.all([
+    supabase.from("orders").select("total, created_at").eq("payment_status", "paid"),
+    // The schema stores unpaid orders as `unpaid`; the UI labels this bucket as Pending.
+    supabase.from("orders").select("total").eq("payment_status", "unpaid"),
+  ]);
+
+  if (paidOrdersResult.error) {
+    throw paidOrdersResult.error;
+  }
+
+  if (pendingOrdersResult.error) {
+    throw pendingOrdersResult.error;
+  }
+
+  const paidOrders = paidOrdersResult.data ?? [];
+  const pendingOrders = pendingOrdersResult.data ?? [];
+
+  const totalPaid = paidOrders.reduce((sum, order) => sum + safeNumber(order.total), 0);
+  const paidThisMonth = paidOrders.reduce((sum, order) => {
+    const createdAt = ensureDate(order.created_at);
+    if (!createdAt || createdAt < monthStart) {
+      return sum;
+    }
+
+    return sum + safeNumber(order.total);
+  }, 0);
+  const pendingTotal = pendingOrders.reduce((sum, order) => sum + safeNumber(order.total), 0);
+
+  return {
+    totalPaid,
+    paidThisMonth,
+    pendingTotal,
   };
 };
 

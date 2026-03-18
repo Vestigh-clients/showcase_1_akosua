@@ -52,6 +52,7 @@ const navGroups: AdminNavGroup[] = [
     label: "Settings",
     links: [
       { label: "Shipping Rates", to: "/admin/shipping" },
+      { label: "Payments", to: "/admin/payments" },
       { label: "Admin Users", to: "/admin/users", minRole: "super_admin" },
       { label: "Site Settings", to: "/admin/settings", minRole: "super_admin" },
     ],
@@ -379,7 +380,7 @@ const AdminLayout = () => {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-[300] flex h-screen w-[280px] transform flex-col overflow-y-auto bg-[var(--color-primary)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.77,0,0.175,1)] md:hidden ${
+        className={`fixed inset-y-0 left-0 z-[300] flex h-screen w-[280px] transform flex-col overflow-y-auto bg-[var(--color-primary)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.77,0,0.175,1)] md:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
           drawerOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-hidden={!drawerOpen}
@@ -456,7 +457,7 @@ const AdminLayout = () => {
           <p className="mt-4 font-body text-[10px] uppercase tracking-[0.15em] text-[var(--color-muted)]">Admin Panel</p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {visibleNavGroups.map((group) => (
             <div key={group.label}>
               <p className="px-6 pt-6 pb-2 font-body text-[9px] uppercase tracking-[0.2em] text-[var(--color-muted)]">{group.label}</p>
@@ -627,5 +628,3 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-
-
