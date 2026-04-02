@@ -65,8 +65,8 @@ const Footer = () => {
 
             {quickContactLinks.length > 0 ? (
               <div className="mt-6 flex flex-wrap gap-3">
-                {quickContactLinks.map((item) => (
-                  <FooterLink key={item.href} item={item} />
+                {quickContactLinks.map((item, index) => (
+                  <FooterLink key={`${item.label}-${item.href}-${index}`} item={item} />
                 ))}
               </div>
             ) : null}
@@ -76,8 +76,8 @@ const Footer = () => {
             <div key={column.title}>
               <h4 className="font-body text-[10px] font-semibold uppercase tracking-[0.24em] text-white">{column.title}</h4>
               <div className="mt-6 flex flex-col gap-4">
-                {column.links.map((item) => (
-                  <FooterLink key={item.href} item={item} />
+                {column.links.map((item, index) => (
+                  <FooterLink key={`${column.title}-${item.label}-${item.href}-${index}`} item={item} />
                 ))}
               </div>
             </div>

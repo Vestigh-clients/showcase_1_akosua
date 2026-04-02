@@ -33,7 +33,7 @@ const ShopProductCard = ({ item, showQuickAction = true, className }: ShopProduc
   const imageUrl = item.imageUrl?.trim() || (item.product ? getPrimaryImage(item.product) : "");
   const imageAlt = item.imageAlt?.trim() || item.name;
   const categoryLabel = item.categoryLabel?.trim() || item.product?.categories?.name || getCategoryLabel(item.product?.categories?.slug);
-  const descriptor = item.descriptor?.trim() || item.product?.short_description?.trim() || categoryLabel;
+  const descriptor = categoryLabel;
   const priceLabel = item.priceLabel?.trim() || (item.product ? formatPrice(item.product.price) : "");
   const isOutOfStock = item.product ? !isInStock(item.product) : false;
   const requiresVariantSelection = item.product?.has_variants === true;

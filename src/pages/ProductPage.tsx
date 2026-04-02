@@ -610,21 +610,24 @@ const ProductPage = () => {
           ? "text-[var(--color-muted-soft)]"
           : "text-[var(--color-muted)]";
   const installmentAmount = formatPrice(displayPrice / 4);
-  const productDescription = product.short_description || product.description || "";
+  const productDescription = product?.short_description || product?.description || "";
   const reviewConfig = contentConfig.product.reviews;
   const completeTheLookItems = useMemo<ShopProductCardItem[]>(
     () =>
-      relatedProducts.slice(0, 4).map((item) => ({
-        href: `/shop/${item.slug}`,
-        name: item.name,
-        descriptor: item.short_description?.trim() || item.categories?.name || getCategoryLabel(item.categories?.slug),
-        priceLabel: formatPrice(item.price),
-        imageUrl: getPrimaryImage(item),
-        imageAlt: item.name,
-        badgeLabel: item.is_featured ? "Bestseller" : undefined,
-        categoryLabel: item.categories?.name || getCategoryLabel(item.categories?.slug),
-        product: item,
-      })),
+      relatedProducts
+        .filter((item): item is Product => Boolean(item))
+        .slice(0, 4)
+        .map((item) => ({
+          href: `/shop/${item.slug}`,
+          name: item.name,
+          descriptor: item.short_description?.trim() || item.categories?.name || getCategoryLabel(item.categories?.slug),
+          priceLabel: formatPrice(item.price),
+          imageUrl: getPrimaryImage(item),
+          imageAlt: item.name,
+          badgeLabel: item.is_featured ? "Bestseller" : undefined,
+          categoryLabel: item.categories?.name || getCategoryLabel(item.categories?.slug),
+          product: item,
+        })),
     [relatedProducts],
   );
 
@@ -1297,8 +1300,8 @@ const ProductPage = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-8">
-            {completeTheLookItems.map((item) => (
-              <ShopProductCard key={item.href} item={item} />
+            {completeTheLookItems.map((item, index) => (
+              <ShopProductCard key={item.product?.id ?? `${item.href}-${index}`} item={item} />
             ))}
           </div>
         </section>
