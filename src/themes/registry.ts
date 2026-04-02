@@ -1,7 +1,8 @@
-import { atelierThemePreset } from "./atelier/preset";
-import { sandstoneThemePreset } from "./sandstone/preset";
+import { atelierThemePreset } from "./atelier/preset.ts";
+import { heritageThemePreset } from "./heritage/preset.ts";
+import { sandstoneThemePreset } from "./sandstone/preset.ts";
 
-export const themePresetKeys = ["atelier", "sandstone"] as const;
+export const themePresetKeys = ["atelier", "sandstone", "heritage"] as const;
 export type ThemePresetKey = (typeof themePresetKeys)[number];
 
 export interface ThemeTokens {
@@ -82,6 +83,7 @@ export interface ThemePreset {
 export const themePresets: Record<ThemePresetKey, ThemePreset> = {
   atelier: atelierThemePreset,
   sandstone: sandstoneThemePreset,
+  heritage: heritageThemePreset,
 };
 
 export const themePresetOptions = themePresetKeys.map((key) => ({

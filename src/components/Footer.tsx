@@ -1,100 +1,128 @@
-import { Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 import StoreLogo from "@/components/StoreLogo";
-import { contentConfig } from "@/config/content.config";
+import { contentConfig, type ContentLinkConfig } from "@/config/content.config";
 import { useStorefrontConfig } from "@/contexts/StorefrontConfigContext";
 import { buildWhatsAppContactLink } from "@/lib/contact";
 
-interface FooterSocialLink {
-  label: string;
-  href: string;
-}
+const isExternalHref = (href: string) => /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
+
+const FooterLink = ({ item }: { item: ContentLinkConfig }) => {
+  const className =
+    "font-body text-[11px] uppercase tracking-[0.18em] text-white/65 transition-colors hover:text-[var(--color-accent)]";
+
+  if (isExternalHref(item.href)) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className={className}>
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={item.href} className={className}>
+      {item.label}
+    </Link>
+  );
+};
 
 const Footer = () => {
   const { storefrontConfig } = useStorefrontConfig();
 
-  const socialLinks: FooterSocialLink[] = [
-    { label: "Instagram", href: storefrontConfig.socials.instagram },
-    { label: "Facebook", href: storefrontConfig.socials.facebook },
-    { label: "Twitter", href: storefrontConfig.socials.twitter },
-    { label: "TikTok", href: storefrontConfig.socials.tiktok },
-  ].filter((entry) => Boolean(entry.href.trim()));
+  const quickContactLinks = [
+    storefrontConfig.contact.email
+      ? {
+          label: storefrontConfig.contact.email,
+          href: `mailto:${storefrontConfig.contact.email}`,
+        }
+      : null,
+    storefrontConfig.contact.whatsapp
+      ? {
+          label: `WhatsApp ${storefrontConfig.contact.whatsapp}`,
+          href: buildWhatsAppContactLink(storefrontConfig.storeName, storefrontConfig.contact.whatsapp),
+        }
+      : null,
+    storefrontConfig.socials.instagram
+      ? {
+          label: "Instagram",
+          href: storefrontConfig.socials.instagram,
+        }
+      : null,
+  ].filter((item): item is ContentLinkConfig => Boolean(item));
 
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-          <div className="md:col-span-1">
-            <div className="mb-2">
-              <StoreLogo className="h-9 w-auto" textClassName="text-2xl font-bold tracking-wider text-primary-foreground" />
-            </div>
-            <p className="mb-3 font-body text-xs italic text-primary-foreground/60">{storefrontConfig.storeTagline}</p>
-            <p className="font-body text-sm leading-relaxed text-primary-foreground/70">{contentConfig.footer.description}</p>
+    <footer className="bg-[var(--color-primary)] text-white">
+      <div className="mx-auto max-w-screen-2xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-[1.25fr_0.8fr_0.8fr_1fr]">
+          <div>
+            <StoreLogo
+              className="h-10 w-auto"
+              textClassName="font-display text-[28px] font-bold italic tracking-[-0.03em] text-white"
+            />
+            <p className="mt-3 font-body text-[11px] uppercase tracking-[0.18em] text-[var(--color-accent)]">
+              {storefrontConfig.storeTagline}
+            </p>
+            <p className="mt-5 max-w-xs font-body text-sm leading-7 text-white/70">{contentConfig.footer.description}</p>
+
+            {quickContactLinks.length > 0 ? (
+              <div className="mt-6 flex flex-wrap gap-3">
+                {quickContactLinks.map((item) => (
+                  <FooterLink key={item.href} item={item} />
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <div>
-            <h4 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider">Shop</h4>
-            <div className="flex flex-col gap-2">
-              {contentConfig.footer.shopLinks.map((link) => (
-                <Link key={link.href} to={link.href} className="font-body text-sm text-primary-foreground/70 transition-colors hover:text-accent">
-                  {link.label}
-                </Link>
-              ))}
+          {contentConfig.footer.columns.map((column) => (
+            <div key={column.title}>
+              <h4 className="font-body text-[10px] font-semibold uppercase tracking-[0.24em] text-white">{column.title}</h4>
+              <div className="mt-6 flex flex-col gap-4">
+                {column.links.map((item) => (
+                  <FooterLink key={item.href} item={item} />
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
           <div>
-            <h4 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider">Company</h4>
-            <div className="flex flex-col gap-2">
-              {contentConfig.footer.companyLinks.map((link) => (
-                <Link key={link.href} to={link.href} className="font-body text-sm text-primary-foreground/70 transition-colors hover:text-accent">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+            <h4 className="font-body text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
+              {contentConfig.footer.newsletter.title}
+            </h4>
+            <p className="mt-6 max-w-xs font-body text-sm leading-7 text-white/70">{contentConfig.footer.newsletter.description}</p>
 
-          <div>
-            <h4 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider">Connect</h4>
-            <div className="flex flex-col gap-3">
-              {storefrontConfig.contact.whatsapp ? (
-                <a
-                  href={buildWhatsAppContactLink(storefrontConfig.storeName, storefrontConfig.contact.whatsapp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-body text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-                >
-                  WhatsApp: {storefrontConfig.contact.whatsapp}
-                </a>
-              ) : null}
-              {storefrontConfig.contact.email ? (
-                <a
-                  href={`mailto:${storefrontConfig.contact.email}`}
-                  className="font-body text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-                >
-                  Email: {storefrontConfig.contact.email}
-                </a>
-              ) : null}
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 font-body text-sm text-primary-foreground/70 transition-colors hover:text-accent"
-                >
-                  {social.label === "Instagram" ? <Instagram size={16} /> : null}
-                  {social.label}
-                </a>
-              ))}
-            </div>
+            <form
+              onSubmit={(event) => event.preventDefault()}
+              className="mt-6 flex items-center gap-0 rounded-[0.25rem] bg-white/8 p-1"
+            >
+              <input
+                type="email"
+                placeholder={contentConfig.footer.newsletter.inputPlaceholder}
+                className="min-w-0 flex-1 bg-transparent px-3 py-3 font-body text-[12px] text-white outline-none placeholder:text-white/45"
+                aria-label={contentConfig.footer.newsletter.inputPlaceholder}
+              />
+              <button
+                type="submit"
+                className="rounded-[0.125rem] bg-[var(--color-accent)] px-4 py-3 font-body text-[10px] font-semibold uppercase tracking-[0.22em] text-white transition-colors hover:bg-[#8A6E00]"
+              >
+                {contentConfig.footer.newsletter.buttonLabel}
+              </button>
+            </form>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-primary-foreground/20 pt-8 text-center">
-          <p className="font-body text-xs text-primary-foreground/50">
-            © {new Date().getFullYear()} {storefrontConfig.storeName}. All rights reserved.
-          </p>
+        <div className="mt-14 rounded-[0.5rem] bg-black/10 px-4 py-5 sm:px-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="font-body text-[10px] uppercase tracking-[0.2em] text-white/55">
+              Copyright {new Date().getFullYear()} {storefrontConfig.storeName}. {contentConfig.footer.bottomNote}
+            </p>
+
+            <div className="flex flex-wrap gap-5">
+              {contentConfig.footer.locations.map((location) => (
+                <span key={location} className="font-body text-[10px] uppercase tracking-[0.2em] text-white/45">
+                  {location}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </footer>

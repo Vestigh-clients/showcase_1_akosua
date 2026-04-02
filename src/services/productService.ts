@@ -301,7 +301,25 @@ export const getAllProducts = async () => {
       has_variants,
       images, benefits, tags,
       weight_grams,
-      categories ( id, name, slug )
+      categories ( id, name, slug ),
+      product_option_types (
+        id, name, display_order,
+        product_option_values (
+          id, option_type_id, value, color_hex,
+          display_order
+        )
+      ),
+      product_variants (
+        id, label, price,
+        compare_at_price,
+        stock_quantity,
+        is_available,
+        display_order, sku,
+        product_variant_options (
+          option_type_id,
+          option_value_id
+        )
+      )
     `)
     .eq("is_available", true)
     .order("created_at", { ascending: false });

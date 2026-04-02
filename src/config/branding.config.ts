@@ -1,13 +1,13 @@
-import type { BrandingConfig } from "./store.types";
+import type { BrandingConfig } from "./store.types.ts";
 
 export const brandingConfig: BrandingConfig = {
-  storeName: "Vestigh Store",
-  storeTagline: "Your store tagline",
-  logoUrl: "assets/vicky_logo_white.png",
+  storeName: "Akosua Prints",
+  storeTagline: "Global heritage, modern style.",
+  logoUrl: "",
   faviconUrl: "/favicon.ico",
-  defaultThemePreset: "atelier",
+  defaultThemePreset: "heritage",
   contact: {
-    email: "hello@store.com",
+    email: "hello@akosuaprints.com",
     phone: "",
     whatsapp: "",
     address: "",

@@ -1,134 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ShopProductCard, { ShopProductCardSkeleton } from "@/components/ShopProductCard";
 import ProductFetchErrorState from "@/components/products/ProductFetchErrorState";
-import ProductImagePlaceholder from "@/components/products/ProductImagePlaceholder";
 import { storeConfig } from "@/config/store.config";
+import { getCategoryLabel } from "@/lib/categories";
 import { formatPrice } from "@/lib/price";
 import { getProductsByCategory } from "@/services/productService";
-import { getPrimaryImage, isInStock, type Product } from "@/types/product";
+import { getPrimaryImage, type Product } from "@/types/product";
 
 type SortOption = "featured" | "price-low-high" | "price-high-low" | "newest";
 
 const CATEGORY_SKELETON_COUNT = 4;
 
-interface CategoryProductCardProps {
-  product: Product;
-  variant: "large" | "standard" | "banner";
-}
-
-const CategoryProductCard = ({ product, variant }: CategoryProductCardProps) => {
-  const image = getPrimaryImage(product);
-  const [hasImageError, setHasImageError] = useState(false);
-  const isOutOfStock = !isInStock(product);
-
-  useEffect(() => {
-    setHasImageError(false);
-  }, [image, product.id]);
-
-  if (variant === "banner") {
-    return (
-      <article className="group border-t border-[var(--color-border)] pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-5">
-          <div className="relative overflow-hidden md:col-span-3">
-            <Link to={`/shop/${product.slug}`} className="block">
-              {image && !hasImageError ? (
-                <img
-                  src={image}
-                  alt={product.name}
-                  className="h-[320px] md:h-[420px] w-full object-cover transition-transform ease-out [transition-duration:400ms] group-hover:scale-[1.04]"
-                  loading="lazy"
-                  onError={() => setHasImageError(true)}
-                />
-              ) : (
-                <ProductImagePlaceholder className="h-[320px] md:h-[420px] w-full" />
-              )}
-            </Link>
-          </div>
-
-          <div className="md:col-span-2 flex flex-col justify-center border-[var(--color-border)] px-6 py-8 transition-colors duration-300 ease-in-out md:border-l md:px-8 group-hover:bg-[var(--color-primary)]">
-            <Link to={`/shop/${product.slug}`}>
-              <h3 className="font-display text-[16px] font-normal italic leading-snug text-foreground transition-colors duration-300 ease-in-out group-hover:text-[var(--color-secondary)]">
-                {product.name}
-              </h3>
-            </Link>
-            <p className="mt-2 font-body text-[13px] font-normal text-[var(--color-muted)] transition-colors duration-300 ease-in-out group-hover:text-[var(--color-secondary)]">
-              {formatPrice(product.price)}
-            </p>
-            {isOutOfStock ? (
-              <p className="mt-1 font-body text-[10px] uppercase tracking-[0.08em] text-[var(--color-muted-soft)] transition-colors duration-300 ease-in-out group-hover:text-[var(--color-border)]">
-                Out of Stock
-              </p>
-            ) : null}
-
-            <p className="mt-4 font-body text-[13px] font-light leading-[1.8] text-[var(--color-muted-soft)] transition-colors duration-300 ease-in-out group-hover:text-[var(--color-secondary)]">
-              {product.short_description || product.description || ""}
-            </p>
-          </div>
-        </div>
-      </article>
-    );
-  }
-
-  const imageWrapperClass =
-    variant === "large"
-      ? "group relative overflow-hidden aspect-[3/4] md:aspect-auto md:flex-1"
-      : "group relative overflow-hidden aspect-[4/5]";
-
-  return (
-    <article className="flex h-full flex-col">
-      <div className={imageWrapperClass}>
-        <Link to={`/shop/${product.slug}`} className="block h-full">
-          {image && !hasImageError ? (
-            <img
-              src={image}
-              alt={product.name}
-              className="h-full w-full object-cover transition-transform ease-out [transition-duration:400ms] group-hover:scale-[1.04]"
-              loading="lazy"
-              onError={() => setHasImageError(true)}
-            />
-          ) : (
-            <ProductImagePlaceholder className="h-full w-full" />
-          )}
-        </Link>
-      </div>
-
-      <div className="mt-[14px] text-left">
-        <Link to={`/shop/${product.slug}`}>
-          <h3 className="font-display text-[16px] font-normal italic leading-snug text-foreground">{product.name}</h3>
-        </Link>
-        <p className="mt-1 font-body text-[13px] font-normal text-[var(--color-muted)]">{formatPrice(product.price)}</p>
-        {isOutOfStock ? (
-          <p className="mt-1 font-body text-[10px] uppercase tracking-[0.08em] text-[var(--color-muted-soft)]">Out of Stock</p>
-        ) : null}
-      </div>
-    </article>
-  );
-};
-
-const CardSkeleton = ({ variant }: { variant: "large" | "standard" }) => (
-  <div className="flex h-full flex-col">
-    <div className={variant === "large" ? "lux-product-shimmer aspect-[3/4] md:aspect-auto md:flex-1" : "lux-product-shimmer aspect-[4/5]"} />
-    <div className="mt-[14px] space-y-2">
-      <div className="lux-product-shimmer h-4 w-2/3" />
-      <div className="lux-product-shimmer h-3 w-1/3" />
-    </div>
-  </div>
-);
-
-const BannerSkeleton = () => (
-  <article className="border-t border-[var(--color-border)] pt-8">
-    <div className="grid grid-cols-1 md:grid-cols-5">
-      <div className="lux-product-shimmer h-[320px] md:h-[420px] w-full md:col-span-3" />
-      <div className="md:col-span-2 border-[var(--color-border)] px-6 py-8 md:border-l md:px-8">
-        <div className="space-y-3">
-          <div className="lux-product-shimmer h-4 w-2/3" />
-          <div className="lux-product-shimmer h-3 w-1/3" />
-          <div className="lux-product-shimmer h-14 w-full" />
-        </div>
-      </div>
-    </div>
-  </article>
-);
+const toShopCardItem = (product: Product) => ({
+  href: `/shop/${product.slug}`,
+  name: product.name,
+  descriptor: product.short_description?.trim() || product.categories?.name || getCategoryLabel(product.categories?.slug),
+  priceLabel: formatPrice(product.price),
+  imageUrl: getPrimaryImage(product),
+  imageAlt: product.name,
+  badgeLabel: product.is_featured ? "Bestseller" : undefined,
+  categoryLabel: product.categories?.name || getCategoryLabel(product.categories?.slug),
+  product,
+});
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -208,25 +102,6 @@ const CategoryPage = () => {
     }
   }, [products, sortBy]);
 
-  const productChunks = useMemo(() => {
-    const chunks: Product[][] = [];
-    for (let index = 0; index < sortedProducts.length; index += 4) {
-      chunks.push(sortedProducts.slice(index, index + 4));
-    }
-    return chunks;
-  }, [sortedProducts]);
-
-  const skeletonChunks = useMemo(() => {
-    const chunked: number[][] = [];
-    const items = Array.from({ length: CATEGORY_SKELETON_COUNT }).map((_, index) => index);
-
-    for (let index = 0; index < items.length; index += 4) {
-      chunked.push(items.slice(index, index + 4));
-    }
-
-    return chunked;
-  }, []);
-
   if (!category) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
@@ -297,102 +172,32 @@ const CategoryPage = () => {
         </section>
 
         <section className="container mx-auto px-4 pb-[80px]">
-          <div className="space-y-[80px]">
-            {loading
-              ? skeletonChunks.map((chunk, chunkIndex) => {
-                  const [firstProduct, secondProduct, thirdProduct, bannerProduct] = chunk;
+          <div className="space-y-12">
+            <div className="bg-foreground px-8 py-16 md:px-[80px] md:py-[100px]">
+              <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-5 md:gap-16">
+                <p className="md:col-span-3 font-display text-[34px] font-light italic leading-[1.2] text-background md:text-[40px]">
+                  {editorialQuote}
+                </p>
 
-                  return (
-                    <div key={`skeleton-chunk-${chunkIndex}`} className="space-y-[80px]">
-                      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:items-stretch md:gap-6">
-                        {firstProduct !== undefined ? (
-                          <div className="h-full">
-                            <CardSkeleton variant="large" />
-                          </div>
-                        ) : null}
+                <p className="md:col-span-2 max-w-[340px] whitespace-pre-line font-body text-[14px] font-normal leading-[2] text-[var(--color-muted-soft)]">
+                  {editorialDescription}
+                </p>
+              </div>
+            </div>
 
-                        {secondProduct !== undefined || thirdProduct !== undefined ? (
-                          <div className={`grid gap-6 md:h-full ${secondProduct !== undefined && thirdProduct !== undefined ? "md:grid-rows-2" : ""}`}>
-                            {secondProduct !== undefined ? (
-                              <div className="h-full">
-                                <CardSkeleton variant="standard" />
-                              </div>
-                            ) : null}
-
-                            {thirdProduct !== undefined ? (
-                              <div className="h-full">
-                                <CardSkeleton variant="standard" />
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      {chunkIndex === 0 ? (
-                        <div className="bg-foreground px-8 py-[100px] md:px-[80px]">
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-start">
-                            <p className="md:col-span-3 font-display text-[34px] md:text-[40px] font-light italic leading-[1.2] text-background">
-                              {editorialQuote}
-                            </p>
-
-                            <p className="md:col-span-2 max-w-[340px] whitespace-pre-line font-body text-[14px] font-normal leading-[2] text-[var(--color-muted-soft)]">
-                              {editorialDescription}
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {bannerProduct !== undefined ? <BannerSkeleton /> : null}
-                    </div>
-                  );
-                })
-              : productChunks.map((chunk, chunkIndex) => {
-                  const [firstProduct, secondProduct, thirdProduct, bannerProduct] = chunk;
-
-                  return (
-                    <div key={`${category.slug}-chunk-${chunkIndex}`} className="space-y-[80px]">
-                      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:items-stretch md:gap-6">
-                        {firstProduct ? (
-                          <div className="h-full">
-                            <CategoryProductCard product={firstProduct} variant="large" />
-                          </div>
-                        ) : null}
-
-                        {secondProduct || thirdProduct ? (
-                          <div className={`grid gap-6 md:h-full ${secondProduct && thirdProduct ? "md:grid-rows-2" : ""}`}>
-                            {secondProduct ? (
-                              <div className="h-full">
-                                <CategoryProductCard product={secondProduct} variant="standard" />
-                              </div>
-                            ) : null}
-
-                            {thirdProduct ? (
-                              <div className="h-full">
-                                <CategoryProductCard product={thirdProduct} variant="standard" />
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      {chunkIndex === 0 ? (
-                        <div className="bg-foreground px-8 py-[100px] md:px-[80px]">
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16 items-start">
-                            <p className="md:col-span-3 font-display text-[34px] md:text-[40px] font-light italic leading-[1.2] text-background">
-                              {editorialQuote}
-                            </p>
-
-                            <p className="md:col-span-2 max-w-[340px] whitespace-pre-line font-body text-[14px] font-normal leading-[2] text-[var(--color-muted-soft)]">
-                              {editorialDescription}
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {bannerProduct ? <CategoryProductCard product={bannerProduct} variant="banner" /> : null}
-                    </div>
-                  );
-                })}
+            {loading ? (
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: CATEGORY_SKELETON_COUNT }).map((_, index) => (
+                  <ShopProductCardSkeleton key={`category-skeleton-${index}`} />
+                ))}
+              </div>
+            ) : sortedProducts.length > 0 ? (
+              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
+                {sortedProducts.map((product) => (
+                  <ShopProductCard key={product.id} item={toShopCardItem(product)} />
+                ))}
+              </div>
+            ) : null}
 
             {!loading && sortedProducts.length === 0 ? (
               <div className="border border-[var(--color-border)] px-6 py-8 text-center">

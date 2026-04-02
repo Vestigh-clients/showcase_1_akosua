@@ -1,33 +1,55 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "@/contexts/CartContext";
 import ProductImagePlaceholder from "@/components/products/ProductImagePlaceholder";
+import { useCart } from "@/contexts/CartContext";
 import { getCategoryLabel } from "@/lib/categories";
 import { formatPrice } from "@/lib/price";
+import { cn } from "@/lib/utils";
 import { getPrimaryImage, getStockQuantity, isInStock, type Product } from "@/types/product";
 
-interface ShopProductCardProps {
-  product: Product;
-  size?: "regular" | "banner";
+export interface ShopProductCardItem {
+  href: string;
+  name: string;
+  descriptor?: string;
+  priceLabel?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  badgeLabel?: string;
+  categoryLabel?: string;
+  product?: Product | null;
 }
 
-const ShopProductCard = ({ product, size = "regular" }: ShopProductCardProps) => {
+interface ShopProductCardProps {
+  item: ShopProductCardItem;
+  showQuickAction?: boolean;
+  className?: string;
+}
+
+const ShopProductCard = ({ item, showQuickAction = true, className }: ShopProductCardProps) => {
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const imageUrl = getPrimaryImage(product);
   const [hasImageError, setHasImageError] = useState(false);
-  const categoryLabel = product.categories?.name || getCategoryLabel(product.categories?.slug);
-  const stockQuantity = getStockQuantity(product);
-  const isOutOfStock = !isInStock(product);
-  const requiresVariantSelection = product.has_variants === true;
+
+  const imageUrl = item.imageUrl?.trim() || (item.product ? getPrimaryImage(item.product) : "");
+  const imageAlt = item.imageAlt?.trim() || item.name;
+  const categoryLabel = item.categoryLabel?.trim() || item.product?.categories?.name || getCategoryLabel(item.product?.categories?.slug);
+  const descriptor = item.descriptor?.trim() || item.product?.short_description?.trim() || categoryLabel;
+  const priceLabel = item.priceLabel?.trim() || (item.product ? formatPrice(item.product.price) : "");
+  const isOutOfStock = item.product ? !isInStock(item.product) : false;
+  const requiresVariantSelection = item.product?.has_variants === true;
 
   useEffect(() => {
     setHasImageError(false);
-  }, [imageUrl, product.id]);
+  }, [imageUrl, item.product?.id, item.name]);
 
-  const handleAddToCart = () => {
+  const handleQuickAction = () => {
+    if (!item.product) {
+      navigate(item.href);
+      return;
+    }
+
     if (requiresVariantSelection) {
-      navigate(`/shop/${product.slug}`);
+      navigate(item.href);
       return;
     }
 
@@ -36,107 +58,113 @@ const ShopProductCard = ({ product, size = "regular" }: ShopProductCardProps) =>
     }
 
     addToCart({
-      product_id: product.id,
-      name: product.name,
-      slug: product.slug,
+      product_id: item.product.id,
+      name: item.product.name,
+      slug: item.product.slug,
       category: categoryLabel,
-      price: product.price,
-      compare_at_price: product.compare_at_price ?? null,
+      price: item.product.price,
+      compare_at_price: item.product.compare_at_price ?? null,
       image_url: imageUrl,
-      image_alt: product.name,
-      sku: product.sku ?? null,
-      stock_quantity: stockQuantity,
+      image_alt: imageAlt,
+      sku: item.product.sku ?? null,
+      stock_quantity: getStockQuantity(item.product),
       variant_id: null,
       variant_label: null,
     });
   };
 
-  const imageHoverOverlay = (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-12 translate-y-full items-center justify-center bg-[rgba(var(--color-primary-rgb),0.88)] transition-transform duration-300 ease-in-out group-hover:translate-y-0">
-      <span className="font-body text-[11px] uppercase tracking-[0.15em] text-[var(--color-secondary)]">Add to Cart</span>
-    </div>
-  );
-
-  if (size === "banner") {
-    return (
-      <article className="group bg-transparent">
-        <div className="grid h-[400px] w-full grid-cols-[55fr_45fr]">
-          <div className="relative overflow-hidden">
-            <Link to={`/shop/${product.slug}`} className="block h-full">
-              {imageUrl && !hasImageError ? (
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  className="h-full w-full object-cover object-center transition-transform ease-out [transition-duration:400ms] group-hover:scale-[1.04]"
-                  loading="lazy"
-                  onError={() => setHasImageError(true)}
-                />
-              ) : (
-                <ProductImagePlaceholder className="h-full w-full" />
-              )}
-            </Link>
-          </div>
-
-          <div className="flex h-full flex-col justify-center bg-[var(--color-secondary)] p-12">
-            <p className="mb-3 font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-accent)]">
-              {categoryLabel}
-            </p>
-
-            <Link to={`/shop/${product.slug}`} className="mb-2 block">
-              <h3 className="font-display text-[24px] font-normal italic leading-[1.2] text-[var(--color-primary)]">{product.name}</h3>
-            </Link>
-
-            <p className="mb-7 font-body text-[13px] font-light text-[var(--color-muted)]">{formatPrice(product.price)}</p>
-            {isOutOfStock ? (
-              <p className="mb-6 font-body text-[10px] uppercase tracking-[0.08em] text-[var(--color-muted-soft)]">Out of Stock</p>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              className="w-fit rounded-[var(--border-radius)] bg-[var(--color-primary)] px-8 py-[14px] font-body text-[11px] uppercase tracking-[0.15em] text-[var(--color-secondary)] transition-colors duration-300 hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:bg-[var(--color-border)] disabled:text-[var(--color-muted)]"
-            >
-              {isOutOfStock ? "Out of Stock" : requiresVariantSelection ? "Select Options" : "Add to Cart"}
-            </button>
-          </div>
-        </div>
-      </article>
-    );
-  }
+  const quickActionLabel = !item.product
+    ? "View Product"
+    : isOutOfStock
+      ? "Out of Stock"
+      : requiresVariantSelection
+        ? "Select Options"
+        : "Quick Add";
 
   return (
-    <article className="group bg-transparent">
-      <div className="relative aspect-[4/5] w-full overflow-hidden">
-        <Link to={`/shop/${product.slug}`} className="block h-full">
+    <article className={cn("group flex flex-col gap-4", className)}>
+      <div className="relative overflow-hidden rounded-[0.5rem] bg-[var(--color-surface-alt)] shadow-[0_20px_60px_rgba(28,28,26,0.04)]">
+        <Link to={item.href} className="block">
           {imageUrl && !hasImageError ? (
             <img
               src={imageUrl}
-              alt={product.name}
-              className="h-full w-full object-cover object-center transition-transform ease-out [transition-duration:400ms] group-hover:scale-[1.04]"
+              alt={imageAlt}
+              className="aspect-[3/4] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
               loading="lazy"
               onError={() => setHasImageError(true)}
             />
           ) : (
-            <ProductImagePlaceholder className="h-full w-full" />
+            <ProductImagePlaceholder className="aspect-[3/4] w-full" />
           )}
-          {imageHoverOverlay}
         </Link>
+
+        {item.badgeLabel ? (
+          <div className="absolute left-3 top-3">
+            <span
+              className={cn(
+                "rounded-[0.125rem] px-2 py-1 font-body text-[9px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm",
+                item.badgeLabel.toLowerCase() === "bestseller" ? "bg-[var(--color-primary)]" : "bg-[var(--color-accent)]",
+              )}
+            >
+              {item.badgeLabel}
+            </span>
+          </div>
+        ) : null}
+
+        {showQuickAction ? (
+          <div className="absolute inset-0 flex items-end justify-center bg-[rgba(0,27,15,0.06)] p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            {item.product ? (
+              <button
+                type="button"
+                onClick={handleQuickAction}
+                disabled={isOutOfStock}
+                className="w-full translate-y-4 bg-[var(--color-primary)] py-3 font-body text-[10px] font-semibold uppercase tracking-[0.22em] text-white transition-all duration-300 group-hover:translate-y-0 hover:bg-[var(--color-accent)] disabled:cursor-not-allowed disabled:bg-[var(--color-border)] disabled:text-[var(--color-muted)]"
+              >
+                {quickActionLabel}
+              </button>
+            ) : (
+              <Link
+                to={item.href}
+                className="w-full translate-y-4 bg-[var(--color-primary)] py-3 text-center font-body text-[10px] font-semibold uppercase tracking-[0.22em] text-white transition-all duration-300 group-hover:translate-y-0 hover:bg-[var(--color-accent)]"
+              >
+                {quickActionLabel}
+              </Link>
+            )}
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-3 text-left">
-        <Link to={`/shop/${product.slug}`}>
-          <h3 className="font-display text-[15px] font-normal italic leading-snug text-[var(--color-primary)]">{product.name}</h3>
+      <div className="flex flex-col gap-1">
+        <Link to={item.href} className="transition-colors hover:text-[var(--color-accent)]">
+          <h3 className="font-display text-[22px] leading-tight text-[var(--color-primary)]">{item.name}</h3>
         </Link>
-        <p className="mt-1 font-body text-[12px] font-light text-[var(--color-muted)]">{formatPrice(product.price)}</p>
-        {isOutOfStock ? (
-          <p className="mt-1 font-body text-[10px] uppercase tracking-[0.08em] text-[var(--color-muted-soft)]">Out of Stock</p>
-        ) : null}
+
+        <div className="flex items-end justify-between gap-4">
+          {descriptor ? (
+            <span className="font-body text-[10px] uppercase tracking-[0.18em] text-[var(--color-muted)]">{descriptor}</span>
+          ) : (
+            <span />
+          )}
+          <span className="font-display text-[18px] font-semibold text-[var(--color-accent)]">{priceLabel}</span>
+        </div>
       </div>
     </article>
   );
 };
 
+export const ShopProductCardSkeleton = ({ className }: { className?: string }) => {
+  return (
+    <div className={cn("flex flex-col gap-4", className)}>
+      <div className="lux-product-shimmer aspect-[3/4] w-full rounded-[0.5rem]" />
+      <div className="space-y-2">
+        <div className="lux-product-shimmer h-5 w-2/3 rounded-[0.25rem]" />
+        <div className="flex justify-between gap-3">
+          <div className="lux-product-shimmer h-3 w-1/3 rounded-[0.25rem]" />
+          <div className="lux-product-shimmer h-4 w-1/4 rounded-[0.25rem]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default ShopProductCard;
-
-

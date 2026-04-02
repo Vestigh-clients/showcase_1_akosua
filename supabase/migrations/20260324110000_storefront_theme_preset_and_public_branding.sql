@@ -1,5 +1,5 @@
 INSERT INTO public.site_settings (key, value)
-VALUES ('site_theme_preset', 'atelier')
+VALUES ('site_theme_preset', 'heritage')
 ON CONFLICT (key) DO NOTHING;
 
 DROP POLICY IF EXISTS "public read storefront branding settings" ON public.site_settings;

@@ -1,27 +1,15 @@
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { LayoutDashboard, Menu, ShoppingBag, X } from "lucide-react";
+import { LayoutDashboard, Menu, Search, ShoppingBag, X } from "lucide-react";
 import SignOutConfirmModal from "@/components/auth/SignOutConfirmModal";
 import StoreLogo from "@/components/StoreLogo";
+import { contentConfig, type ContentLinkConfig } from "@/config/content.config";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useStorefrontConfig } from "@/contexts/StorefrontConfigContext";
 import { useSignOutWithCartWarning } from "@/hooks/useSignOutWithCartWarning";
 
-const baseNavLinks = [
-  { to: "/", label: "Home" },
-  { to: "/shop", label: "Shop" },
-];
-
-const accountMenuLinks = [
-  { to: "/account", label: "Overview" },
-  { to: "/account/orders", label: "My Orders" },
-  { to: "/account/addresses", label: "Addresses" },
-  { to: "/account/profile", label: "Personal Details" },
-  { to: "/account/password", label: "Change Password" },
-];
-
-const CATEGORY_ROUTE_PREFIX = "/category/";
+const isExternalHref = (href: string) => /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
 
 interface ProfileMenuProps {
   isOpen: boolean;
@@ -55,7 +43,7 @@ const ProfileMenu = ({
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-controls={menuId}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)] font-body text-[12px] text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)]"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] font-body text-[12px] font-medium text-white transition-colors hover:bg-[var(--color-accent)]"
       >
         {userInitial}
       </button>
@@ -64,124 +52,101 @@ const ProfileMenu = ({
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 top-full z-[95] mt-3 min-w-[240px] rounded-[var(--border-radius)] border border-[var(--color-border)] bg-[var(--color-secondary)] shadow-[0_18px_40px_rgba(var(--color-primary-rgb),0.08)]"
+          className="absolute right-0 top-full z-[95] mt-3 min-w-[250px] overflow-hidden rounded-[0.5rem] bg-white shadow-[var(--shadow-soft)]"
         >
-          <div className="border-b border-[var(--color-border)] px-4 py-3">
-            <p className="font-display text-[20px] italic text-[var(--color-primary)]">{userName}</p>
+          <div className="bg-[var(--color-surface-alt)] px-5 py-4">
+            <p className="font-display text-[20px] font-semibold italic text-[var(--color-primary)]">{userName}</p>
             <p className="font-body text-[11px] text-[var(--color-muted)]">{userEmail}</p>
           </div>
 
-          <div className="py-2">
-            {accountMenuLinks.map((link) => (
+          <div className="px-2 py-2">
+            {[
+              { to: "/account", label: "Overview" },
+              { to: "/account/orders", label: "My Orders" },
+              { to: "/account/addresses", label: "Addresses" },
+              { to: "/account/profile", label: "Personal Details" },
+              { to: "/account/password", label: "Change Password" },
+            ].map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={onClose}
                 role="menuitem"
-                className="block px-4 py-2.5 font-body text-[11px] uppercase tracking-[0.1em] text-[var(--color-muted)] transition-colors hover:bg-[rgba(var(--color-primary-rgb),0.08)] hover:text-[var(--color-accent)]"
+                className="block rounded-[0.25rem] px-3 py-2.5 font-body text-[11px] uppercase tracking-[0.14em] text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-accent)]"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onSignOut();
-            }}
-            role="menuitem"
-            className="w-full border-t border-[var(--color-border)] px-4 py-3 text-left font-body text-[11px] uppercase tracking-[0.1em] text-[var(--color-muted-soft)] transition-colors hover:bg-[rgba(var(--color-primary-rgb),0.08)] hover:text-[var(--color-danger)]"
-          >
-            Sign Out
-          </button>
+          <div className="px-2 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSignOut();
+              }}
+              role="menuitem"
+              className="w-full rounded-[0.25rem] px-3 py-2.5 text-left font-body text-[11px] uppercase tracking-[0.14em] text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-danger)]"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
   );
 };
 
+interface NavigationLinkProps {
+  item: ContentLinkConfig;
+  isActive: boolean;
+  onNavigate?: () => void;
+  className?: string;
+}
+
+const NavigationLink = ({ item, isActive, onNavigate, className }: NavigationLinkProps) => {
+  const linkClassName = `${className ?? ""} ${isActive ? "text-[var(--color-accent)]" : "text-[var(--color-primary)] hover:text-[var(--color-accent)]"}`;
+
+  if (isExternalHref(item.href)) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noreferrer"
+        onClick={onNavigate}
+        className={linkClassName}
+      >
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={item.href} onClick={onNavigate} className={linkClassName}>
+      {item.label}
+    </Link>
+  );
+};
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [badgeScaleClass, setBadgeScaleClass] = useState("scale-100");
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
-  const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
+
+  const desktopUserMenuRef = useRef<HTMLDivElement | null>(null);
+  const previousTotalItemsRef = useRef(0);
+  const badgeResetTimeoutRef = useRef<number | null>(null);
 
   const { storefrontConfig } = useStorefrontConfig();
-  const location = useLocation();
-  const normalizedPathname = useMemo(() => {
-    const trimmedPathname = location.pathname.replace(/\/+$/, "");
-    return trimmedPathname.length > 0 ? trimmedPathname : "/";
-  }, [location.pathname]);
-  const desktopUserMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileUserMenuRef = useRef<HTMLDivElement | null>(null);
-
   const { totalItems, openCart } = useCart();
   const { user, isAuthenticated, isAdmin } = useAuth();
   const { isConfirmOpen, isSubmitting, requestSignOut, confirmSignOut, cancelSignOut } = useSignOutWithCartWarning();
-  const previousTotalItemsRef = useRef(totalItems);
-  const badgeResetTimeoutRef = useRef<number | null>(null);
-  const enabledCategories = useMemo(
-    () =>
-      storefrontConfig.categories
-        .filter((category) => category.enabled)
-        .map((category) => ({
-          ...category,
-          slug: category.slug.trim().toLowerCase(),
-        }))
-        .filter((category) => category.slug.length > 0),
-    [storefrontConfig.categories],
-  );
-  const isTransparentRoute = useMemo(() => {
-    if (normalizedPathname === "/") {
-      return true;
-    }
-
-    if (!normalizedPathname.startsWith(CATEGORY_ROUTE_PREFIX)) {
-      return false;
-    }
-
-    const categorySlug = normalizedPathname.slice(CATEGORY_ROUTE_PREFIX.length);
-    if (!categorySlug || categorySlug.includes("/")) {
-      return false;
-    }
-
-    let decodedCategorySlug = categorySlug;
-    try {
-      decodedCategorySlug = decodeURIComponent(categorySlug);
-    } catch {
-      decodedCategorySlug = categorySlug;
-    }
-
-    const normalizedCategorySlug = decodedCategorySlug.trim().toLowerCase();
-    if (!normalizedCategorySlug) {
-      return false;
-    }
-
-    return enabledCategories.some((category) => category.slug === normalizedCategorySlug);
-  }, [enabledCategories, normalizedPathname]);
-  const overlayHero = isTransparentRoute && !scrolled && !open;
-
-  useEffect(() => {
-    if (!isTransparentRoute) {
-      setScrolled(true);
-      return;
-    }
-
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 28);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isTransparentRoute]);
+  const location = useLocation();
 
   useEffect(() => {
     if (totalItems > previousTotalItemsRef.current) {
-      setBadgeScaleClass("scale-[1.3]");
+      setBadgeScaleClass("scale-[1.2]");
 
       if (badgeResetTimeoutRef.current) {
         window.clearTimeout(badgeResetTimeoutRef.current);
@@ -189,7 +154,7 @@ const Navbar = () => {
 
       badgeResetTimeoutRef.current = window.setTimeout(() => {
         setBadgeScaleClass("scale-100");
-      }, 20);
+      }, 180);
     }
 
     previousTotalItemsRef.current = totalItems;
@@ -203,36 +168,32 @@ const Navbar = () => {
     };
   }, []);
 
-  const closeUserMenus = useCallback(() => {
+  const closeNavigation = useCallback(() => {
+    setOpen(false);
     setIsDesktopUserMenuOpen(false);
-    setIsMobileUserMenuOpen(false);
   }, []);
 
   useEffect(() => {
-    setOpen(false);
-    closeUserMenus();
-  }, [location.pathname, closeUserMenus]);
+    closeNavigation();
+  }, [closeNavigation, location.hash, location.pathname]);
 
   useEffect(() => {
-    if (!isDesktopUserMenuOpen && !isMobileUserMenuOpen) {
+    if (!isDesktopUserMenuOpen) {
       return;
     }
 
     const handlePointerDown = (event: MouseEvent) => {
       const targetNode = event.target as Node;
-      const clickedDesktopMenu = desktopUserMenuRef.current?.contains(targetNode) ?? false;
-      const clickedMobileMenu = mobileUserMenuRef.current?.contains(targetNode) ?? false;
+      const clickedMenu = desktopUserMenuRef.current?.contains(targetNode) ?? false;
 
-      if (clickedDesktopMenu || clickedMobileMenu) {
-        return;
+      if (!clickedMenu) {
+        setIsDesktopUserMenuOpen(false);
       }
-
-      closeUserMenus();
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        closeUserMenus();
+        setIsDesktopUserMenuOpen(false);
       }
     };
 
@@ -242,43 +203,25 @@ const Navbar = () => {
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [closeUserMenus, isDesktopUserMenuOpen, isMobileUserMenuOpen]);
+  }, [isDesktopUserMenuOpen]);
 
-  const solidNavTextClass = "text-[var(--color-navbar-solid-foreground)]";
-  const solidNavMutedTextClass = "text-[rgba(var(--color-navbar-solid-foreground-rgb),0.78)]";
-  const solidNavInteractiveTextClass = "text-[var(--color-navbar-solid-interactive)]";
-  const solidNavInteractiveHoverClass = "hover:text-[var(--color-navbar-solid-interactive)]";
-  const navTextColor = isTransparentRoute ? "text-white" : solidNavTextClass;
-  const navDividerClass = isTransparentRoute ? "text-[var(--color-border)]" : "text-[rgba(var(--color-navbar-solid-foreground-rgb),0.35)]";
-  const navHoverClass = isTransparentRoute ? "hover:text-accent" : solidNavInteractiveHoverClass;
-  const navActiveClass = isTransparentRoute ? "text-accent font-semibold" : `${solidNavInteractiveTextClass} font-semibold`;
-  const navLinks = useMemo(() => {
-    if (enabledCategories.length === 0) {
-      return baseNavLinks;
-    }
+  const isLinkActive = useCallback(
+    (href: string) => {
+      if (href === "/shop") {
+        return location.pathname === "/shop" || location.pathname.startsWith("/shop/") || location.pathname.startsWith("/category/");
+      }
 
-    const shopLinkIndex = baseNavLinks.findIndex((link) => link.to === "/shop");
-    if (shopLinkIndex < 0) {
-      return baseNavLinks;
-    }
+      if (href.includes("#")) {
+        const [pathPart, hashPart] = href.split("#");
+        const expectedPath = pathPart || "/";
+        return location.pathname === expectedPath && location.hash === `#${hashPart}`;
+      }
 
-    const categoryLinks = enabledCategories.map((category) => ({
-      to: `/category/${encodeURIComponent(category.slug)}`,
-      label: category.name,
-    }));
-
-    return [
-      ...baseNavLinks.slice(0, shopLinkIndex + 1),
-      ...categoryLinks,
-      ...baseNavLinks.slice(shopLinkIndex + 1),
-    ];
-  }, [enabledCategories]);
-  const isNavLinkActive = useCallback(
-    (to: string) => {
-      return location.pathname === to;
+      return location.pathname === href;
     },
-    [location.pathname],
+    [location.hash, location.pathname],
   );
+
   const metadata = (user?.user_metadata ?? {}) as Record<string, unknown>;
   const metadataFirstName = typeof metadata.first_name === "string" ? metadata.first_name.trim() : "";
   const metadataLastName = typeof metadata.last_name === "string" ? metadata.last_name.trim() : "";
@@ -295,12 +238,12 @@ const Navbar = () => {
         setOpen(false);
         openCart();
       }}
-      className={`relative transition-colors ${navTextColor} ${navHoverClass}`}
+      className="relative text-[var(--color-primary)] transition-colors hover:text-[var(--color-accent)]"
     >
-      <ShoppingBag size={20} strokeWidth={1.35} />
+      <ShoppingBag size={20} strokeWidth={1.5} />
       {totalItems > 0 ? (
         <span
-          className={`absolute -right-[9px] -top-[8px] inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-[4px] font-body text-[9px] font-medium leading-none text-[var(--color-primary)] transition-transform duration-200 ease-out ${badgeScaleClass}`}
+          className={`absolute -right-[8px] -top-[8px] inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--color-accent)] px-[4px] font-body text-[9px] font-semibold leading-none text-white transition-transform duration-200 ${badgeScaleClass}`}
         >
           {totalItems > 99 ? "99+" : totalItems}
         </span>
@@ -308,169 +251,177 @@ const Navbar = () => {
     </button>
   );
 
-  const signInLinkClass = isTransparentRoute
-    ? "text-white/85 hover:text-[var(--color-accent)]"
-    : `${solidNavTextClass} ${solidNavInteractiveHoverClass}`;
-  const adminIconClass = isTransparentRoute
-    ? "text-white/85 hover:text-[var(--color-accent)]"
-    : `${solidNavMutedTextClass} ${solidNavInteractiveHoverClass}`;
-
   const adminAction = isAuthenticated && isAdmin ? (
     <Link
       to="/admin"
       aria-label="Open admin panel"
       title="Admin Panel"
-      className={`transition-colors ${adminIconClass}`}
+      className="text-[var(--color-primary)] transition-colors hover:text-[var(--color-accent)]"
+      onClick={() => setOpen(false)}
     >
-      <LayoutDashboard size={19} strokeWidth={1.4} />
+      <LayoutDashboard size={18} strokeWidth={1.5} />
     </Link>
   ) : null;
 
-  const authActionDesktop = isAuthenticated ? (
-    <ProfileMenu
-      isOpen={isDesktopUserMenuOpen}
-      userInitial={userInitial}
-      userName={userName}
-      userEmail={userEmail}
-      menuId="desktop-account-menu"
-      containerRef={desktopUserMenuRef}
-      onToggle={() => {
-        setIsMobileUserMenuOpen(false);
-        setIsDesktopUserMenuOpen((previous) => !previous);
-      }}
-      onClose={closeUserMenus}
-      onSignOut={requestSignOut}
-    />
-  ) : (
-    <Link to="/auth/login" className={`font-body text-[11px] uppercase tracking-[0.1em] transition-colors ${signInLinkClass}`}>
-      Sign In
-    </Link>
-  );
+  const desktopNavLinkClass =
+    "font-display text-[15px] tracking-[-0.01em] transition-colors";
 
-  const authActionMobile = isAuthenticated ? (
-    <ProfileMenu
-      isOpen={isMobileUserMenuOpen}
-      userInitial={userInitial}
-      userName={userName}
-      userEmail={userEmail}
-      menuId="mobile-account-menu"
-      containerRef={mobileUserMenuRef}
-      onToggle={() => {
-        setIsDesktopUserMenuOpen(false);
-        setIsMobileUserMenuOpen((previous) => !previous);
-      }}
-      onClose={closeUserMenus}
-      onSignOut={requestSignOut}
-    />
-  ) : (
-    <Link to="/auth/login" className={`font-body text-[11px] uppercase tracking-[0.1em] transition-colors ${signInLinkClass}`}>
-      Sign In
-    </Link>
-  );
+  const mobileNavLinkClass =
+    "font-display text-[18px] tracking-[-0.01em] transition-colors";
 
   return (
     <>
-      <nav
-        className={`top-0 left-0 z-50 w-full transition-[background-color,border-color,backdrop-filter] duration-500 ${
-          isTransparentRoute
-            ? overlayHero
-              ? "absolute bg-transparent border-transparent"
-              : "fixed bg-black/55 backdrop-blur-md border-b border-white/15"
-            : "sticky bg-[rgba(var(--color-navbar-solid-rgb),0.95)] backdrop-blur-md border-b border-border"
-        }`}
-      >
-        <div className="container mx-auto flex items-center justify-between py-5 px-4">
-          <Link to="/" aria-label={`${storefrontConfig.storeName} home`} className="inline-flex items-center">
-            <StoreLogo
-              className="h-10 w-auto sm:h-12 lg:h-14"
-              textClassName={`text-[20px] sm:text-[24px] ${isTransparentRoute ? "text-white" : "text-foreground"}`}
-            />
-          </Link>
-
-          <div className="hidden lg:flex items-center gap-7">
-            <div className="flex items-center">
-              {navLinks.map((link, index) => (
-                <div key={link.to} className="flex items-center">
-                  <Link
-                    to={link.to}
-                    className={`font-body text-[11px] uppercase tracking-[0.1em] transition-colors ${navHoverClass} ${
-                      isNavLinkActive(link.to)
-                        ? navActiveClass
-                        : isTransparentRoute
-                          ? "text-white/85"
-                          : solidNavMutedTextClass
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                  {index < navLinks.length - 1 ? (
-                    <span className={`mx-4 ${navDividerClass}`} aria-hidden="true">
-                      |
-                    </span>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-            {adminAction}
-            {cartButton}
-            {authActionDesktop}
-          </div>
-
-          <div className="flex items-center gap-4 lg:hidden">
-            {adminAction}
-            {cartButton}
-            {authActionMobile}
-            <button
-              type="button"
-              className={`${navTextColor}`}
-              onClick={() => setOpen(!open)}
-              aria-label={open ? "Close menu" : "Open menu"}
-            >
-              {open ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+      <nav className="sticky top-0 z-50 shadow-[0_1px_0_rgba(28,28,26,0.05)]">
+        <div className="bg-[var(--color-primary)] px-4 py-2 text-center font-body text-[10px] uppercase tracking-[0.24em] text-white sm:px-6 lg:px-8">
+          {contentConfig.navigation.announcementText}
         </div>
 
-        {open ? (
-          <div
-            className={`lg:hidden px-4 pb-4 animate-fade-in ${
-              isTransparentRoute
-                ? "bg-black/60 backdrop-blur-md border-b border-white/15"
-                : "bg-[rgba(var(--color-navbar-solid-rgb),0.95)] backdrop-blur-md border-b border-border"
-            }`}
-          >
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setOpen(false)}
-                className={`block py-2.5 font-body text-[11px] uppercase tracking-[0.1em] transition-colors ${navHoverClass} ${
-                  isNavLinkActive(link.to)
-                    ? navActiveClass
-                    : isTransparentRoute
-                      ? "text-white/85"
-                      : solidNavMutedTextClass
-                }`}
-              >
-                {link.label}
+        <div className="bg-[rgba(252,249,245,0.92)] backdrop-blur-xl">
+          <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-8 xl:gap-12">
+              <Link to="/" aria-label={`${storefrontConfig.storeName} home`} className="inline-flex items-center">
+                <StoreLogo
+                  className="h-10 w-auto"
+                  textClassName="font-display text-[24px] font-bold italic tracking-[-0.03em] text-[var(--color-primary)]"
+                />
               </Link>
-            ))}
 
-            {isAuthenticated ? (
+              <div className="hidden items-center gap-8 md:flex">
+                {contentConfig.navigation.links.map((item) => (
+                  <NavigationLink
+                    key={item.href}
+                    item={item}
+                    isActive={isLinkActive(item.href)}
+                    className={desktopNavLinkClass}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-4 lg:flex">
+              <label className="flex items-center gap-2 rounded-[0.125rem] bg-[var(--color-surface-alt)] px-4 py-2 text-[var(--color-muted)]">
+                <Search size={14} strokeWidth={1.6} />
+                <input
+                  type="search"
+                  placeholder={contentConfig.navigation.searchPlaceholder}
+                  className="w-44 bg-transparent font-body text-[12px] text-[var(--color-primary)] outline-none placeholder:text-[var(--color-muted)]"
+                  aria-label={contentConfig.navigation.searchPlaceholder}
+                />
+              </label>
+
+              {adminAction}
+              {cartButton}
+
+              {isAuthenticated ? (
+                <ProfileMenu
+                  isOpen={isDesktopUserMenuOpen}
+                  userInitial={userInitial}
+                  userName={userName}
+                  userEmail={userEmail}
+                  menuId="desktop-account-menu"
+                  containerRef={desktopUserMenuRef}
+                  onToggle={() => setIsDesktopUserMenuOpen((previous) => !previous)}
+                  onClose={() => setIsDesktopUserMenuOpen(false)}
+                  onSignOut={requestSignOut}
+                />
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="font-body text-[11px] uppercase tracking-[0.18em] text-[var(--color-primary)] transition-colors hover:text-[var(--color-accent)]"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 lg:hidden">
+              {cartButton}
               <button
                 type="button"
-                onClick={() => {
-                  setOpen(false);
-                  closeUserMenus();
-                  requestSignOut();
-                }}
-                className={`mt-2 block w-full py-2.5 text-left font-body text-[11px] uppercase tracking-[0.1em] transition-colors ${signInLinkClass}`}
+                className="text-[var(--color-primary)]"
+                onClick={() => setOpen((previous) => !previous)}
+                aria-label={open ? "Close menu" : "Open menu"}
               >
-                Sign Out
+                {open ? <X size={22} strokeWidth={1.6} /> : <Menu size={22} strokeWidth={1.6} />}
               </button>
-            ) : null}
+            </div>
           </div>
-        ) : null}
+
+          {open ? (
+            <div className="border-t border-[rgba(28,28,26,0.04)] bg-[rgba(252,249,245,0.98)] px-4 pb-5 pt-4 shadow-[0_18px_40px_rgba(28,28,26,0.05)] animate-fade-in lg:hidden sm:px-6">
+              <label className="mb-5 flex items-center gap-2 rounded-[0.125rem] bg-white px-4 py-3 text-[var(--color-muted)] shadow-[0_10px_24px_rgba(28,28,26,0.04)]">
+                <Search size={15} strokeWidth={1.6} />
+                <input
+                  type="search"
+                  placeholder={contentConfig.navigation.searchPlaceholder}
+                  className="w-full bg-transparent font-body text-[12px] text-[var(--color-primary)] outline-none placeholder:text-[var(--color-muted)]"
+                  aria-label={contentConfig.navigation.searchPlaceholder}
+                />
+              </label>
+
+              <div className="flex flex-col gap-3">
+                {contentConfig.navigation.links.map((item) => (
+                  <NavigationLink
+                    key={item.href}
+                    item={item}
+                    isActive={isLinkActive(item.href)}
+                    onNavigate={() => setOpen(false)}
+                    className={mobileNavLinkClass}
+                  />
+                ))}
+              </div>
+
+              <div className="mt-6 flex items-center gap-4">
+                {adminAction}
+                {!isAuthenticated ? (
+                  <Link
+                    to="/auth/login"
+                    onClick={() => setOpen(false)}
+                    className="font-body text-[11px] uppercase tracking-[0.18em] text-[var(--color-primary)] transition-colors hover:text-[var(--color-accent)]"
+                  >
+                    Sign In
+                  </Link>
+                ) : null}
+              </div>
+
+              {isAuthenticated ? (
+                <div className="mt-6 rounded-[0.5rem] bg-white p-4 shadow-[0_18px_40px_rgba(28,28,26,0.05)]">
+                  <p className="font-display text-[20px] font-semibold italic text-[var(--color-primary)]">{userName}</p>
+                  <p className="mt-1 font-body text-[11px] text-[var(--color-muted)]">{userEmail}</p>
+
+                  <div className="mt-4 flex flex-col gap-2">
+                    {[
+                      { to: "/account", label: "Overview" },
+                      { to: "/account/orders", label: "My Orders" },
+                      { to: "/account/addresses", label: "Addresses" },
+                      { to: "/account/profile", label: "Personal Details" },
+                    ].map((link) => (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setOpen(false)}
+                        className="font-body text-[11px] uppercase tracking-[0.14em] text-[var(--color-primary)] transition-colors hover:text-[var(--color-accent)]"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        requestSignOut();
+                      }}
+                      className="mt-2 w-fit font-body text-[11px] uppercase tracking-[0.14em] text-[var(--color-muted)] transition-colors hover:text-[var(--color-danger)]"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </nav>
 
       <SignOutConfirmModal
